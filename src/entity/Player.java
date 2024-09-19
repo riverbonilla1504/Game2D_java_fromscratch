@@ -8,23 +8,18 @@ import main.GamePanel;
 import main.KeyHandler;
 
 public class Player extends Entity {
-
     GamePanel gameP;
     KeyHandler keyH;
 
-
-    // Player constructor and default values
     public Player(GamePanel gameP, KeyHandler keyH) {
         this.gameP = gameP;
         this.keyH = keyH;
         setDefaultValues();
-        getPlayerImage();
-
+        getEntityImages();
         solidArea = new Rectangle(8, 16, 32, 32);
     }
 
-
-    //default values for player
+    @Override
     public void setDefaultValues() {
         x = 100;
         y = 100;
@@ -32,44 +27,36 @@ public class Player extends Entity {
         direction = "default";
     }
 
-
-    // get player sprites
-public void getPlayerImage () {
-
-    try {
-        System.out.println("Player image loaded");
-        up1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up1.png"));
-        System.out.println("Player image  up1 loaded");
-        up2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up2.png"));
-        up3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up3.png"));
-        up4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up4.png"));
-
-        down1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down1.png"));
-        down2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down2.png"));
-        down3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down3.png"));
-        down4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down4.png"));
-
-        left1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left1.png"));
-        left2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left2.png"));
-        left3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left3.png"));
-        left4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left4.png"));
-
-        right1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right1.png"));
-        right2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right2.png"));
-        right3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right3.png"));
-        right4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right4.png"));
-
-        default1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default1.png"));
-        default2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default2.png"));
-        default3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default3.png"));
-        default4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default4.png"));
-    } catch(Exception e) {
-        e.printStackTrace();
-
+    @Override
+    public void getEntityImages() {
+        try {
+            up1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up1.png"));
+            up2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up2.png"));
+            up3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up3.png"));
+            up4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up4.png"));
+            down1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down1.png"));
+            down2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down2.png"));
+            down3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down3.png"));
+            down4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down4.png"));
+            left1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left1.png"));
+            left2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left2.png"));
+            left3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left3.png"));
+            left4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left4.png"));
+            right1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right1.png"));
+            right2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right2.png"));
+            right3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right3.png"));
+            right4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right4.png"));
+            default1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default1.png"));
+            default2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default2.png"));
+            default3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default3.png"));
+            default4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default4.png"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-}
 
 // player movement
+    @Override
     public void update() {
 
         if (keyH.upPressed == true || keyH.downPressed == true || keyH.leftPressed == true || keyH.rightPressed == true){
@@ -143,6 +130,7 @@ public void getPlayerImage () {
 
 
     // draw player in the screen
+    @Override
     public void draw(Graphics2D g2) {
         BufferedImage img = null;
 
