@@ -1,6 +1,7 @@
 package entity;
 
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import main.GamePanel;
@@ -18,6 +19,8 @@ public class Player extends Entity {
         this.keyH = keyH;
         setDefaultValues();
         getPlayerImage();
+
+        solidArea = new Rectangle(8, 16, 32, 32);
     }
 
 
@@ -71,20 +74,20 @@ public void getPlayerImage () {
 
         if (keyH.upPressed == true || keyH.downPressed == true || keyH.leftPressed == true || keyH.rightPressed == true){
         if (keyH.upPressed == true) {
-            y -= speed;
+
             direction = "up";
 
         }
         if (keyH.downPressed == true) {
-            y += speed;
+            
             direction = "down";
         }
         if (keyH.leftPressed == true) {
-            x -= speed;
+            
             direction = "left";
         }
         if (keyH.rightPressed == true) {
-            x += speed;
+            
             direction = "right";
         }
                 // Player sprite animation
@@ -104,7 +107,17 @@ public void getPlayerImage () {
             }
             spriteCounter = 0;
         }
-
+        CollisionOn = false;
+        gameP.collisionChecker.checkTile(this);
+        if (CollisionOn == false) {
+            switch (direction) {
+                case "up": y -= speed; break;
+                case "down" : y += speed; break;
+                case "left" : x -= speed; break;
+                case "right" : x += speed; break;
+            }
+        }
+        System.err.println("CollisionOn: " + CollisionOn);
         } else{
             spriteCounterDefault++;
             if (spriteCounterDefault > 8) {
@@ -124,6 +137,8 @@ public void getPlayerImage () {
             }
             direction = "default";
         }
+
+
     }
 
 
