@@ -14,8 +14,13 @@ public class TileManager {
         this.gameP = gameP;
         tile = new Tile[12];
         tileIndexes = new int[gameP.maxScreenCol][gameP.maxScreenRow];
-        getTileImage();
+        initialize();
         generateTiles();
+    }
+
+    // Initialization method to avoid calling overridable methods in the constructor
+    private void initialize() {
+        getTileImage();
     }
     
     // Method to load the tiles
