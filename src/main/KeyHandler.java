@@ -3,7 +3,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class KeyHandler implements KeyListener {
-    public boolean upPressed, downPressed, leftPressed, rightPressed;
+    public boolean upPressed, downPressed, leftPressed, rightPressed, enterPressed;
     @Override
     public void keyTyped(KeyEvent e) {
         
@@ -23,6 +23,12 @@ public class KeyHandler implements KeyListener {
         if (code == KeyEvent.VK_D) { // If the key pressed is D
             rightPressed = true;
         }
+        if (code == KeyEvent.VK_ESCAPE) { // If the key pressed is ESC
+            System.exit(0); // Exit the game
+        }
+        if (code == KeyEvent.VK_ENTER) { // If the key pressed is SPACE
+            enterPressed = true;
+        }
     }
     @Override
     public void keyReleased(KeyEvent e) {
@@ -38,6 +44,9 @@ public class KeyHandler implements KeyListener {
         }
         if (code == KeyEvent.VK_D) {
             rightPressed = false;
+        }
+        if (code == KeyEvent.VK_ENTER) {
+            enterPressed = false;
         }
     }
 

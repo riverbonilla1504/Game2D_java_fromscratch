@@ -18,8 +18,10 @@ public class GamePanel extends JPanel implements Runnable {
     public final int tileSize = originalTitleSize * scale;
     public final int maxScreenCol = 16;
     public final int maxScreenRow = 12;
-    final int screenWidth = tileSize * maxScreenCol; // 768 pixels
-    final int screenHeight = tileSize * maxScreenRow; // 576 pixels
+    public final int screenWidth = tileSize * maxScreenCol; // 768 pixels
+    public final int screenHeight = tileSize * maxScreenRow; // 576 pixels
+
+    public int ScreenState = 0;
 
     // FPS
     int FPS = 60;
@@ -40,6 +42,8 @@ public class GamePanel extends JPanel implements Runnable {
     // Tile manager
     TileManager tileManager = new TileManager(this);
 
+    GameMenu gameMenu = new GameMenu(this, keyH);
+
     public GamePanel() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.black);
@@ -48,6 +52,17 @@ public class GamePanel extends JPanel implements Runnable {
         this.setFocusable(true);
         this.requestFocus();
     }
+
+    private static GamePanel instance;
+    
+
+    // Singleton pattern
+    public static GamePanel getInstance() {
+            if (instance == null) {
+                instance = new GamePanel();
+            }
+            return instance;
+        }
 
     public void startGameThread() {
         gameThread = new Thread(this);
@@ -81,10 +96,14 @@ public class GamePanel extends JPanel implements Runnable {
 
     @Override
     public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        super.paintComponent(g); // Ensure parent class method is called to clean the screen
         Graphics2D g2 = (Graphics2D) g;
-        tileManager.draw(g2);
-        player.draw(g2); // draw player
-        g2.dispose();
+        if (ScreenState == 0){
+            gameMenu.drawMenu(g2);
+        }
+        else if (ScreenState == 1){
+            tileManager.draw(g2);
+            player.draw(g2); // draw player
+        }
     }
 }

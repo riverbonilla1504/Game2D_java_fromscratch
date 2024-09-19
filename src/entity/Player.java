@@ -21,8 +21,8 @@ public class Player extends Entity {
 
     @Override
     public void setDefaultValues() {
-        x = 100;
-        y = 100;
+        x = gameP.screenWidth / 2 - 32;
+        y = gameP.screenHeight / 2 - gameP.tileSize;
         speed = 4;
         direction = "default";
     }
