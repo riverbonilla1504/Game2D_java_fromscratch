@@ -13,6 +13,7 @@ public abstract class Entity {
     public int spriteCounterDefault = 0;
     public int spriteNumDefault = 1;
     public Rectangle solidArea;
+    public int solidAreaDefaultX, solidAreaDefaultY;
     public Boolean CollisionOn = false;
 
     // method to set the default values of the entity

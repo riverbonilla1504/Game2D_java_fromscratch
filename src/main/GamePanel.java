@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import javax.swing.JPanel;
+import object.SuperObject;
 import tile.TileManager;
 
 public class GamePanel extends JPanel implements Runnable {
@@ -33,11 +34,15 @@ public class GamePanel extends JPanel implements Runnable {
     // Instance of collision checker
     public CollisionChecker collisionChecker = new CollisionChecker(this);
 
+
+    public AssetSetter assetSetter = new AssetSetter(this);
     // create a new PlayerFactory instance
     EntityFactory playerFactory = new PlayerFactory(this, keyH);
 
     // create a new Player instance
     Entity player = playerFactory.createEntity();
+    
+    public SuperObject obj[] = new SuperObject[10];
 
     // Tile manager
     TileManager tileManager = new TileManager(this);
@@ -53,9 +58,16 @@ public class GamePanel extends JPanel implements Runnable {
         this.requestFocus();
     }
 
-    private static GamePanel instance;
-    
+    public void setupGame() {
+        // Set up the game
+        if(ScreenState == 0){
+            assetSetter.setObject();
+        }
+    }
 
+
+
+    private static GamePanel instance;
     // Singleton pattern
     public static GamePanel getInstance() {
             if (instance == null) {
@@ -93,7 +105,7 @@ public class GamePanel extends JPanel implements Runnable {
     public void update() {
         player.update(); // update player
     }
-
+    
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g); // Ensure parent class method is called to clean the screen
@@ -102,7 +114,14 @@ public class GamePanel extends JPanel implements Runnable {
             gameMenu.drawMenu(g2);
         }
         else if (ScreenState == 1){
-            tileManager.draw(g2);
+
+            tileManager.draw(g2); //draw tiles
+
+            for (int i = 0; i < obj.length; i++) {
+                if (obj[i] != null) {
+                    obj[i].draw(g2, this); // draw objects
+                }
+            }
             player.draw(g2); // draw player
         }
     }

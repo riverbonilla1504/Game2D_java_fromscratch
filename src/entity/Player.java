@@ -10,15 +10,24 @@ import main.KeyHandler;
 public class Player extends Entity {
     GamePanel gameP;
     KeyHandler keyH;
+    public int stars = 0;
 
+    // Player sprite images
     public Player(GamePanel gameP, KeyHandler keyH) {
         this.gameP = gameP;
         this.keyH = keyH;
         setDefaultValues();
         getEntityImages();
-        solidArea = new Rectangle(8, 16, 32, 32);
+        solidArea = new Rectangle();
+        solidArea.x =8;
+        solidArea.y =16;
+        solidArea.width = 32;
+        solidArea.height = 32;
+        solidAreaDefaultX = solidArea.x;
+        solidAreaDefaultY = solidArea.y;
     }
 
+    // method to set the default values of the player
     @Override
     public void setDefaultValues() {
         x = gameP.screenWidth / 2 - 32;
@@ -27,6 +36,7 @@ public class Player extends Entity {
         direction = "default";
     }
 
+    // method to get the images of the player
     @Override
     public void getEntityImages() {
         try {
@@ -55,7 +65,7 @@ public class Player extends Entity {
         }
     }
 
-// player movement
+    // player movement
     @Override
     public void update() {
 
@@ -96,6 +106,12 @@ public class Player extends Entity {
         }
         CollisionOn = false;
         gameP.collisionChecker.checkTile(this);
+
+
+        int objIndex = gameP.collisionChecker.checkObject(this, true); // or true, depending on the required logic
+        pickUpObject(objIndex);
+
+
         if (CollisionOn == false) {
             switch (direction) {
                 case "up": y -= speed; break;
@@ -127,7 +143,15 @@ public class Player extends Entity {
 
 
     }
+    
+    // method to pick up an object
+    public void pickUpObject(int i){
+        if (i != 999){
+            stars += 1;
+            gameP.obj[i] = null;
+        }
 
+    }
 
     // draw player in the screen
     @Override
@@ -213,7 +237,6 @@ public class Player extends Entity {
                 }
             }
         }
-
         g2.drawImage(img, x, y, gameP.tileSize, gameP.tileSize, null);
     }
 }
