@@ -12,7 +12,7 @@ public class main {
         window.setResizable(true);
 
         // Create a new GamePanel object
-        GamePanel gamePanel = new GamePanel();
+        GamePanel gamePanel = GamePanel.getInstance();
 
         // Add the GamePanel to the window
         window.add(gamePanel);
