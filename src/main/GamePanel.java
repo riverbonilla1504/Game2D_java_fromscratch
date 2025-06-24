@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Main game panel that handles rendering, game loop, and state management
- * Implements singleton pattern for global access
+ * Now supports larger BSP-generated maps with camera system
  */
 public class GamePanel extends JPanel implements Runnable {
     // Game state
@@ -130,7 +130,18 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void update() {
         if (currentState == GameState.PLAYING) {
+            // Update player
             player.update();
+
+            // Update tile manager (camera follows player)
+            tileManager.update();
+
+            // Check for map regeneration
+            if (keyHandler.regenerateMapPressed) {
+                tileManager.regenerateMap(System.currentTimeMillis());
+                keyHandler.regenerateMapPressed = false;
+                System.out.println("Map regenerated with new BSP seed");
+            }
         }
     }
 
@@ -151,26 +162,101 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void renderGame(Graphics2D g2) {
-        // Draw tiles
+        // Draw tiles with camera system
         tileManager.draw(g2);
 
-        // Draw objects
+        // Draw objects (need to implement camera transform for objects)
         for (SuperObject obj : gameObjects) {
             if (obj != null) {
-                obj.draw(g2, this);
+                drawObjectWithCamera(g2, obj);
             }
         }
 
+        // Draw player with camera transform
+        drawPlayerWithCamera(g2);
+    }
+
+    /**
+     * Draw object with camera transformation
+     */
+    private void drawObjectWithCamera(Graphics2D g2, SuperObject obj) {
+        // Get camera for coordinate transformation
+        Camera camera = tileManager.getCamera();
+
+        // Convert world position to screen position
+        int screenX = camera.worldToScreenX(obj.getWorldX());
+        int screenY = camera.worldToScreenY(obj.getWorldY());
+
+        // Only draw if visible on screen
+        if (camera.isVisible(obj.getWorldX(), obj.getWorldY(), GameConfig.TILE_SIZE, GameConfig.TILE_SIZE)) {
+            // Save original position
+            int originalX = obj.getWorldX();
+            int originalY = obj.getWorldY();
+
+            // Temporarily set screen position for drawing
+            obj.setWorldX(screenX);
+            obj.setWorldY(screenY);
+
+            // Draw object
+            obj.draw(g2, this);
+
+            // Restore original position
+            obj.setWorldX(originalX);
+            obj.setWorldY(originalY);
+        }
+    }
+
+    /**
+     * Draw player with camera transformation
+     */
+    private void drawPlayerWithCamera(Graphics2D g2) {
+        Camera camera = tileManager.getCamera();
+
+        // Convert player world position to screen position
+        int screenX = camera.worldToScreenX(player.getX());
+        int screenY = camera.worldToScreenY(player.getY());
+
+        // Save original position
+        int originalX = player.getX();
+        int originalY = player.getY();
+
+        // Temporarily set screen position for drawing
+        player.setX(screenX);
+        player.setY(screenY);
+
         // Draw player
         player.draw(g2);
+
+        // Restore original position
+        player.setX(originalX);
+        player.setY(originalY);
     }
 
     private void renderPauseOverlay(Graphics2D g2) {
-        // TODO: Implement pause overlay
+        // Draw semi-transparent overlay
+        g2.setColor(new Color(0, 0, 0, 128));
+        g2.fillRect(0, 0, GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
+
+        // Draw pause text
+        g2.setColor(Color.WHITE);
+        g2.setFont(g2.getFont().deriveFont(48f));
+        String pauseText = "PAUSED";
+        int textX = GameConfig.SCREEN_WIDTH / 2 - g2.getFontMetrics().stringWidth(pauseText) / 2;
+        int textY = GameConfig.SCREEN_HEIGHT / 2;
+        g2.drawString(pauseText, textX, textY);
     }
 
     private void renderGameOver(Graphics2D g2) {
-        // TODO: Implement game over screen
+        // Draw game over screen
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
+
+        g2.setColor(Color.WHITE);
+        g2.setFont(g2.getFont().deriveFont(48f));
+        String gameOverText = "GAME OVER";
+        int textX = GameConfig.SCREEN_WIDTH / 2 - g2.getFontMetrics().stringWidth(gameOverText) / 2;
+        int textY = GameConfig.SCREEN_HEIGHT / 2;
+        g2.drawString(gameOverText, textX, textY);
     }
 
     // Getters and setters
@@ -198,7 +284,7 @@ public class GamePanel extends JPanel implements Runnable {
         return gameObjects;
     }
 
-    // Legacy compatibility - convert to use new ArrayList
+    // Legacy method for compatibility
     public SuperObject[] getObjArray() {
         return gameObjects.toArray(new SuperObject[0]);
     }

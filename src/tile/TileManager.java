@@ -5,30 +5,48 @@ import java.util.Random;
 import main.GamePanel;
 import main.GameConfig;
 import main.ResourceManager;
+import main.BSPDungeonGenerator;
+import main.Camera;
 
 /**
- * Manages tile loading, generation, and rendering
+ * Manages tiles and BSP map generation for larger dungeons
  */
 public class TileManager {
-    public int[][] tileIndexes;
     private final GamePanel gamePanel;
-    public Tile[] tile;
     private final ResourceManager resourceManager;
+    private final Camera camera;
+    public Tile[] tile;
+    private int[][] tileIndexes;
+    private final int mapWidth;
+    private final int mapHeight;
+    private BSPDungeonGenerator bspGenerator;
+    private long currentSeed;
 
     public TileManager(GamePanel gamePanel) {
         this.gamePanel = gamePanel;
         this.resourceManager = ResourceManager.getInstance();
-        tile = new Tile[GameConfig.MAX_TILES];
-        tileIndexes = new int[GameConfig.MAX_SCREEN_COL][GameConfig.MAX_SCREEN_ROW];
+        this.camera = new Camera(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
+        this.mapWidth = GameConfig.MAP_WIDTH;
+        this.mapHeight = GameConfig.MAP_HEIGHT;
+        this.tileIndexes = new int[mapWidth][mapHeight];
+        this.tile = new Tile[GameConfig.MAX_TILES];
+        this.currentSeed = System.currentTimeMillis();
+
+        // Set camera map bounds
+        camera.setMapBounds(mapWidth, mapHeight);
+
         initialize();
-        generateTiles();
+        generateNewMap();
     }
 
     private void initialize() {
-        getTileImage();
+        loadTileImages();
     }
 
-    public void getTileImage() {
+    /**
+     * Load all tile images
+     */
+    public void loadTileImages() {
         try {
             // Floor tiles
             tile[0] = createTile("floor1", false);
@@ -53,6 +71,9 @@ public class TileManager {
         }
     }
 
+    /**
+     * Create a tile with collision property
+     */
     private Tile createTile(String tileName, boolean hasCollision) {
         Tile tile = new Tile();
         tile.tileImage = resourceManager.loadTile(tileName);
@@ -60,101 +81,209 @@ public class TileManager {
         return tile;
     }
 
-    private void generateTiles() {
-        Random random = new Random();
+    /**
+     * Generate a new BSP dungeon
+     */
+    public void generateNewMap() {
+        currentSeed = System.currentTimeMillis();
+        generateMap(currentSeed);
+    }
 
-        // Iterate over the map
-        for (int i = 0; i < tileIndexes.length; i++) {
-            for (int j = 0; j < tileIndexes[i].length; j++) {
-                // Check if the cell is a corner
-                if (isCorner(i, j)) {
-                    tileIndexes[i][j] = getCornerTile(i, j);
-                } else if (isVerticalBorder(i, j)) {
-                    tileIndexes[i][j] = 2; // Tile type for vertical border
-                } else if (isHorizontalBorder(i, j)) {
-                    tileIndexes[i][j] = 1; // Tile type for horizontal border
+    /**
+     * Generate map with specific seed
+     */
+    public void regenerateMap(long seed) {
+        this.currentSeed = seed;
+        generateMap(seed);
+    }
+
+    /**
+     * Generate BSP dungeon and convert to tile indexes
+     */
+    private void generateMap(long seed) {
+        System.out.println("Generating BSP dungeon with seed: " + seed);
+
+        // Generate BSP dungeon
+        bspGenerator = new BSPDungeonGenerator(mapWidth, mapHeight, seed);
+        int[][] generatedMap = bspGenerator.generateMap();
+
+        // Convert to tile indexes with smart wall detection
+        convertMapToTiles(generatedMap, seed);
+
+        System.out.println("BSP dungeon generated and converted to tiles successfully");
+    }
+
+    /**
+     * Convert raw map data to tile indexes with intelligent wall detection
+     */
+    private void convertMapToTiles(int[][] rawMap, long seed) {
+        Random random = new Random(seed);
+
+        for (int x = 0; x < mapWidth; x++) {
+            for (int y = 0; y < mapHeight; y++) {
+                if (rawMap[x][y] == 1) {
+                    // Wall - determine wall type based on neighbors
+                    tileIndexes[x][y] = determineWallType(x, y, rawMap);
                 } else {
-                    // Floor Randomization tiles
-                    if (random.nextDouble() < GameConfig.FLOOR_VARIATION_CHANCE) {
-                        tileIndexes[i][j] = 9;
-                    } else if (random.nextDouble() < GameConfig.FLOOR_VARIATION_CHANCE) {
-                        tileIndexes[i][j] = 10;
+                    // Floor - add variation
+                    double variation = random.nextDouble();
+                    if (variation < GameConfig.FLOOR_VARIATION_CHANCE) {
+                        tileIndexes[x][y] = 9; // floor2
+                    } else if (variation < GameConfig.FLOOR_VARIATION_CHANCE * 2) {
+                        tileIndexes[x][y] = 10; // floor3
                     } else {
-                        tileIndexes[i][j] = 0;
+                        tileIndexes[x][y] = 0; // floor1
                     }
                 }
             }
         }
-        replaceWallsAtBottom();
-        replaceVerticalBorders();
     }
 
-    private boolean isCorner(int x, int y) {
-        return (x == 0 || x == tileIndexes.length - 1) && (y == 0 || y == tileIndexes[0].length - 1);
-    }
+    /**
+     * Intelligent wall type detection based on neighboring walls
+     */
+    private int determineWallType(int x, int y, int[][] map) {
+        boolean topWall = y > 0 && map[x][y - 1] == 1;
+        boolean bottomWall = y < map[0].length - 1 && map[x][y + 1] == 1;
+        boolean leftWall = x > 0 && map[x - 1][y] == 1;
+        boolean rightWall = x < map.length - 1 && map[x + 1][y] == 1;
 
-    private boolean isVerticalBorder(int x, int y) {
-        return (x == 0 || x == tileIndexes.length - 1) && !(y == 0 || y == tileIndexes[0].length - 1);
-    }
-
-    private boolean isHorizontalBorder(int x, int y) {
-        return (y == 0 || y == tileIndexes[0].length - 1) && !(x == 0 || x == tileIndexes.length - 1);
-    }
-
-    private int getCornerTile(int x, int y) {
-        if (x == 0 && y == 0) {
+        // Corner detection
+        if (topWall && leftWall && !bottomWall && !rightWall) {
             return 3; // Upper Left Corner
-        } else if (x == tileIndexes.length - 1 && y == 0) {
+        } else if (topWall && rightWall && !bottomWall && !leftWall) {
             return 4; // Upper Right Corner
-        } else if (x == 0 && y == tileIndexes[0].length - 1) {
+        } else if (bottomWall && leftWall && !topWall && !rightWall) {
             return 5; // Lower Left Corner
-        } else if (x == tileIndexes.length - 1 && y == tileIndexes[0].length - 1) {
+        } else if (bottomWall && rightWall && !topWall && !leftWall) {
             return 6; // Lower Right Corner
         }
-        return 1; // Default
-    }
 
-    private void replaceWallsAtBottom() {
-        for (int i = 0; i < tileIndexes.length; i++) {
-            int bottomRowIndex = tileIndexes[0].length - 1; // Last row
-            if (tileIndexes[i][bottomRowIndex] == 1) { // If it's a wall
-                tileIndexes[i][bottomRowIndex] = 7; // Change to bottom wall tile
-            }
+        // Edge walls
+        if (topWall && bottomWall && !leftWall && !rightWall) {
+            return 2; // Vertical wall
+        } else if (leftWall && rightWall && !topWall && !bottomWall) {
+            return 1; // Horizontal wall
         }
-    }
 
-    private void replaceVerticalBorders() {
-        for (int j = 0; j < tileIndexes[0].length; j++) {
-            // Left border
-            if (tileIndexes[0][j] == 2) {
-                tileIndexes[0][j] = 2; // Left vertical border
-            }
-            // Right border
-            if (tileIndexes[tileIndexes.length - 1][j] == 2) {
-                tileIndexes[tileIndexes.length - 1][j] = 8; // Right vertical border
-            }
+        // Border walls
+        if (y == 0 || y == map[0].length - 1) {
+            return 1; // Top/bottom border
+        } else if (x == 0 || x == map.length - 1) {
+            return 2; // Left/right border
         }
+
+        // Default wall
+        return 1;
     }
 
+    /**
+     * Update camera and tile manager
+     */
+    public void update() {
+        // Set camera target to player
+        if (gamePanel.getPlayer() != null) {
+            camera.setTarget(gamePanel.getPlayer());
+        }
+
+        // Update camera position
+        camera.update();
+    }
+
+    /**
+     * Draw visible tiles using camera system
+     */
     public void draw(Graphics2D g2) {
-        for (int i = 0; i < GameConfig.MAX_SCREEN_COL; i++) {
-            for (int j = 0; j < GameConfig.MAX_SCREEN_ROW; j++) {
-                int tileIndex = tileIndexes[i][j];
-                if (isValidTileIndex(tileIndex)) {
-                    g2.drawImage(tile[tileIndex].tileImage,
-                            i * GameConfig.TILE_SIZE,
-                            j * GameConfig.TILE_SIZE,
-                            GameConfig.TILE_SIZE,
-                            GameConfig.TILE_SIZE, null);
-                } else {
-                    System.err
-                            .println("Error: Tile index " + tileIndex + " is invalid or the tile is not initialized.");
+        // Get visible tile range from camera
+        Camera.TileRange range = camera.getVisibleTileRange();
+
+        // Draw only visible tiles for performance
+        for (int col = range.startCol; col < range.endCol; col++) {
+            for (int row = range.startRow; row < range.endRow; row++) {
+                if (col >= 0 && col < mapWidth && row >= 0 && row < mapHeight) {
+                    int tileIndex = tileIndexes[col][row];
+
+                    if (isValidTileIndex(tileIndex)) {
+                        // Calculate world position
+                        int worldX = col * GameConfig.TILE_SIZE;
+                        int worldY = row * GameConfig.TILE_SIZE;
+
+                        // Convert to screen position
+                        int screenX = camera.worldToScreenX(worldX);
+                        int screenY = camera.worldToScreenY(worldY);
+
+                        // Draw tile
+                        g2.drawImage(tile[tileIndex].tileImage,
+                                screenX, screenY,
+                                GameConfig.TILE_SIZE, GameConfig.TILE_SIZE, null);
+                    }
                 }
             }
         }
     }
 
+    /**
+     * Check if tile index is valid
+     */
     private boolean isValidTileIndex(int tileIndex) {
         return tileIndex >= 0 && tileIndex < tile.length && tile[tileIndex] != null;
+    }
+
+    /**
+     * Check if a tile at world coordinates is solid (for collision detection)
+     */
+    public boolean isTileSolid(int worldX, int worldY) {
+        int col = worldX / GameConfig.TILE_SIZE;
+        int row = worldY / GameConfig.TILE_SIZE;
+
+        if (col < 0 || col >= mapWidth || row < 0 || row >= mapHeight) {
+            return true; // Out of bounds is solid
+        }
+
+        int tileIndex = tileIndexes[col][row];
+        if (isValidTileIndex(tileIndex)) {
+            return tile[tileIndex].collision;
+        }
+
+        return true; // Unknown tiles are solid
+    }
+
+    /**
+     * Get camera instance
+     */
+    public Camera getCamera() {
+        return camera;
+    }
+
+    /**
+     * Get map dimensions
+     */
+    public int getMapWidth() {
+        return mapWidth;
+    }
+
+    public int getMapHeight() {
+        return mapHeight;
+    }
+
+    /**
+     * Get current seed
+     */
+    public long getCurrentSeed() {
+        return currentSeed;
+    }
+
+    /**
+     * Get tile indexes array
+     */
+    public int[][] getTileIndexes() {
+        return tileIndexes;
+    }
+
+    /**
+     * Get BSP generator for analysis
+     */
+    public BSPDungeonGenerator getBSPGenerator() {
+        return bspGenerator;
     }
 }

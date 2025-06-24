@@ -1,13 +1,16 @@
 package main;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class KeyHandler implements KeyListener {
-    public boolean upPressed, downPressed, leftPressed, rightPressed, enterPressed;
+    public boolean upPressed, downPressed, leftPressed, rightPressed, enterPressed, regenerateMapPressed;
+
     @Override
     public void keyTyped(KeyEvent e) {
-        
+
     }
+
     @Override
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
@@ -29,7 +32,11 @@ public class KeyHandler implements KeyListener {
         if (code == KeyEvent.VK_ENTER) { // If the key pressed is SPACE
             enterPressed = true;
         }
+        if (code == KeyEvent.VK_R) { // If the key pressed is R
+            regenerateMapPressed = true;
+        }
     }
+
     @Override
     public void keyReleased(KeyEvent e) {
         int code = e.getKeyCode(); // Get the key code
@@ -47,6 +54,9 @@ public class KeyHandler implements KeyListener {
         }
         if (code == KeyEvent.VK_ENTER) {
             enterPressed = false;
+        }
+        if (code == KeyEvent.VK_R) {
+            regenerateMapPressed = false;
         }
     }
 

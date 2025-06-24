@@ -14,6 +14,10 @@ public final class GameConfig {
     public static final int SCREEN_WIDTH = TILE_SIZE * MAX_SCREEN_COL; // 768 pixels
     public static final int SCREEN_HEIGHT = TILE_SIZE * MAX_SCREEN_ROW; // 576 pixels
 
+    // Map settings (much larger than screen for BSP dungeons)
+    public static final int MAP_WIDTH = 64; // Larger map width
+    public static final int MAP_HEIGHT = 48; // Larger map height
+
     // Game performance
     public static final int TARGET_FPS = 60;
     public static final long NANOS_PER_SECOND = 1_000_000_000L;
@@ -39,11 +43,19 @@ public final class GameConfig {
     public static final int MAX_TILES = 12;
     public static final double FLOOR_VARIATION_CHANCE = 0.15; // 15% chance
 
+    // BSP Dungeon generation settings
+    public static final int BSP_MIN_ROOM_SIZE = 6;
+    public static final int BSP_MAX_ROOM_SIZE = 12;
+    public static final int BSP_MIN_REGION_SIZE = 10;
+    public static final int BSP_ROOM_PADDING = 2;
+    public static final int BSP_MAX_RECURSION_DEPTH = 6;
+
     // UI settings
     public static final String GAME_TITLE = "Dungeon Escape";
     public static final String MENU_TITLE = "Dungeon Scape";
     public static final String START_PROMPT = "Press Enter to Start";
     public static final String EXIT_PROMPT = "Press 'ESC' to Exit";
+    public static final String REGENERATE_PROMPT = "Press 'R' to Regenerate Map";
 
     // Font settings
     public static final float TITLE_FONT_SIZE = 96.0f;
