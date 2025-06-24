@@ -3,240 +3,153 @@ package entity;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
 import main.GamePanel;
 import main.KeyHandler;
+import main.GameConfig;
+import main.ResourceManager;
 
+/**
+ * Player entity class representing the main character
+ * Handles player movement, animation, and interaction
+ */
 public class Player extends Entity {
-    GamePanel gameP;
-    KeyHandler keyH;
-    public int stars = 0;
+    private final GamePanel gamePanel;
+    private final KeyHandler keyHandler;
+    private int stars = 0;
+    private final ResourceManager resourceManager;
 
-    // Player sprite images
-    public Player(GamePanel gameP, KeyHandler keyH) {
-        this.gameP = gameP;
-        this.keyH = keyH;
+    public Player(GamePanel gamePanel, KeyHandler keyHandler) {
+        this.gamePanel = gamePanel;
+        this.keyHandler = keyHandler;
+        this.resourceManager = ResourceManager.getInstance();
+
         setDefaultValues();
         getEntityImages();
-        solidArea = new Rectangle();
-        solidArea.x =8;
-        solidArea.y =16;
-        solidArea.width = 32;
-        solidArea.height = 32;
+        setupCollisionArea();
+    }
+
+    @Override
+    public void setDefaultValues() {
+        x = GameConfig.SCREEN_WIDTH / 2 - 32;
+        y = GameConfig.SCREEN_HEIGHT / 2 - GameConfig.TILE_SIZE;
+        speed = GameConfig.PLAYER_SPEED;
+        direction = Direction.DEFAULT;
+    }
+
+    @Override
+    public void getEntityImages() {
+        // Assign each sprite directly to the class fields
+        up1 = resourceManager.loadPlayerSprite("up", 1);
+        up2 = resourceManager.loadPlayerSprite("up", 2);
+        up3 = resourceManager.loadPlayerSprite("up", 3);
+        up4 = resourceManager.loadPlayerSprite("up", 4);
+
+        down1 = resourceManager.loadPlayerSprite("down", 1);
+        down2 = resourceManager.loadPlayerSprite("down", 2);
+        down3 = resourceManager.loadPlayerSprite("down", 3);
+        down4 = resourceManager.loadPlayerSprite("down", 4);
+
+        left1 = resourceManager.loadPlayerSprite("left", 1);
+        left2 = resourceManager.loadPlayerSprite("left", 2);
+        left3 = resourceManager.loadPlayerSprite("left", 3);
+        left4 = resourceManager.loadPlayerSprite("left", 4);
+
+        right1 = resourceManager.loadPlayerSprite("right", 1);
+        right2 = resourceManager.loadPlayerSprite("right", 2);
+        right3 = resourceManager.loadPlayerSprite("right", 3);
+        right4 = resourceManager.loadPlayerSprite("right", 4);
+
+        default1 = resourceManager.loadPlayerSprite("default", 1);
+        default2 = resourceManager.loadPlayerSprite("default", 2);
+        default3 = resourceManager.loadPlayerSprite("default", 3);
+        default4 = resourceManager.loadPlayerSprite("default", 4);
+    }
+
+    private void setupCollisionArea() {
+        solidArea = new Rectangle(
+                GameConfig.PLAYER_SOLID_AREA_X,
+                GameConfig.PLAYER_SOLID_AREA_Y,
+                GameConfig.PLAYER_SOLID_AREA_WIDTH,
+                GameConfig.PLAYER_SOLID_AREA_HEIGHT);
         solidAreaDefaultX = solidArea.x;
         solidAreaDefaultY = solidArea.y;
     }
 
-    // method to set the default values of the player
-    @Override
-    public void setDefaultValues() {
-        x = gameP.screenWidth / 2 - 32;
-        y = gameP.screenHeight / 2 - gameP.tileSize;
-        speed = 4;
-        direction = "default";
-    }
-
-    // method to get the images of the player
-    @Override
-    public void getEntityImages() {
-        try {
-            up1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up1.png"));
-            up2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up2.png"));
-            up3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up3.png"));
-            up4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_up4.png"));
-            down1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down1.png"));
-            down2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down2.png"));
-            down3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down3.png"));
-            down4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_down4.png"));
-            left1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left1.png"));
-            left2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left2.png"));
-            left3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left3.png"));
-            left4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_left4.png"));
-            right1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right1.png"));
-            right2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right2.png"));
-            right3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right3.png"));
-            right4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_right4.png"));
-            default1 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default1.png"));
-            default2 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default2.png"));
-            default3 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default3.png"));
-            default4 = ImageIO.read(getClass().getResourceAsStream("/main/assets/sprite_player_default4.png"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // player movement
     @Override
     public void update() {
+        handleInput();
+        handleMovement();
+        handleAnimation();
+    }
 
-        if (keyH.upPressed == true || keyH.downPressed == true || keyH.leftPressed == true || keyH.rightPressed == true){
-        if (keyH.upPressed == true) {
+    private void handleInput() {
+        boolean isMoving = keyHandler.upPressed || keyHandler.downPressed ||
+                keyHandler.leftPressed || keyHandler.rightPressed;
 
-            direction = "up";
-
-        }
-        if (keyH.downPressed == true) {
-            
-            direction = "down";
-        }
-        if (keyH.leftPressed == true) {
-            
-            direction = "left";
-        }
-        if (keyH.rightPressed == true) {
-            
-            direction = "right";
-        }
-                // Player sprite animation
-        spriteCounter++;
-        if (spriteCounter > 12) {
-            if (spriteNum == 1) {
-                spriteNum = 2;
+        if (isMoving) {
+            if (keyHandler.upPressed) {
+                direction = Direction.UP;
+            } else if (keyHandler.downPressed) {
+                direction = Direction.DOWN;
+            } else if (keyHandler.leftPressed) {
+                direction = Direction.LEFT;
+            } else if (keyHandler.rightPressed) {
+                direction = Direction.RIGHT;
             }
-            else if (spriteNum == 2) {
-                spriteNum = 3;
-            }
-            else if (spriteNum == 3) {
-                spriteNum = 4;
-            }
-            else if (spriteNum == 4) {
-                spriteNum = 1;
-            }
-            spriteCounter = 0;
+        } else {
+            direction = Direction.DEFAULT;
         }
-        CollisionOn = false;
-        gameP.collisionChecker.checkTile(this);
+    }
 
+    private void handleMovement() {
+        collisionOn = false;
+        gamePanel.getCollisionChecker().checkTile(this);
 
-        int objIndex = gameP.collisionChecker.checkObject(this, true); // or true, depending on the required logic
+        int objIndex = gamePanel.getCollisionChecker().checkObject(this, true);
         pickUpObject(objIndex);
 
-
-        if (CollisionOn == false) {
-            switch (direction) {
-                case "up": y -= speed; break;
-                case "down" : y += speed; break;
-                case "left" : x -= speed; break;
-                case "right" : x += speed; break;
-            }
+        if (!collisionOn) {
+            movePlayer();
         }
-        System.err.println("CollisionOn: " + CollisionOn);
-        } else{
-            spriteCounterDefault++;
-            if (spriteCounterDefault > 8) {
-                if (spriteNumDefault == 1) {
-                    spriteNumDefault = 2;
-                }
-                else if (spriteNumDefault == 2) {
-                    spriteNumDefault = 3;
-                }
-                else if (spriteNumDefault == 3) {
-                    spriteNumDefault = 4;
-                }
-                else if (spriteNumDefault == 4) {
-                    spriteNumDefault = 1;
-                }
-                spriteCounterDefault = 0;
-            }
-            direction = "default";
-        }
-
-
-    }
-    
-    // method to pick up an object
-    public void pickUpObject(int i){
-        if (i != 999){
-            stars += 1;
-            gameP.obj[i] = null;
-        }
-
     }
 
-    // draw player in the screen
+    private void movePlayer() {
+        switch (direction) {
+            case UP -> y -= speed;
+            case DOWN -> y += speed;
+            case LEFT -> x -= speed;
+            case RIGHT -> x += speed;
+            default -> {
+            } // No movement for default direction
+        }
+    }
+
+    private void handleAnimation() {
+        boolean isMoving = direction != Direction.DEFAULT;
+        updateAnimation(isMoving);
+    }
+
+    public void pickUpObject(int index) {
+        if (index != 999) {
+            stars++;
+            gamePanel.getGameObjects().remove(index);
+        }
+    }
+
     @Override
     public void draw(Graphics2D g2) {
-        BufferedImage img = null;
-
-        switch (direction) {
-            case "up" -> {
-                if (spriteNum == 1) {
-                    img = up1;
-                }
-                if (spriteNum == 2) {
-                    img = up2;
-                }
-                if (spriteNum == 3) {
-                    img = up3;
-                }
-                if (spriteNum == 4) {
-                    img = up4;
-                }
-            }
-
-
-            case "down" -> {
-                if(spriteNum == 1) {
-                    img = down1;
-                }
-                if (spriteNum == 2) {
-                    img = down2;
-                }
-                if (spriteNum == 3) {
-                    img = down3;
-                }
-                if (spriteNum == 4) {
-                    img = down4;
-                }
-            }
-
-
-            case "left" -> {
-                if(spriteNum == 1) {
-                    img = left1;
-                }
-                if (spriteNum == 2) {
-                    img = left2;
-                }
-                if (spriteNum == 3) {
-                    img = left3;
-                }
-                if (spriteNum == 4) {
-                    img = left4;
-                }
-            }
-
-
-            case "right" -> {
-                if(spriteNum == 1) {
-                    img = right1;
-                }
-                if (spriteNum == 2) {
-                    img = right2;
-                }
-                if (spriteNum == 3) {
-                    img = right3;
-                }
-                if (spriteNum == 4) {
-                    img = right4;
-                }
-            }
-
-            case "default" -> {
-                if(spriteNumDefault == 1) {
-                    img = default1;
-                }
-                if (spriteNumDefault == 2) {
-                    img = default2;
-                }
-                if (spriteNumDefault == 3) {
-                    img = default3;
-                }
-                if (spriteNumDefault == 4) {
-                    img = default4;
-                }
-            }
+        BufferedImage currentSprite = getCurrentSprite();
+        if (currentSprite != null) {
+            g2.drawImage(currentSprite, x, y, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE, null);
         }
-        g2.drawImage(img, x, y, gameP.tileSize, gameP.tileSize, null);
+    }
+
+    // Getters
+    public int getStars() {
+        return stars;
+    }
+
+    public void setStars(int stars) {
+        this.stars = stars;
     }
 }

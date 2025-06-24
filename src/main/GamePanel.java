@@ -10,119 +10,205 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 import object.SuperObject;
 import tile.TileManager;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Main game panel that handles rendering, game loop, and state management
+ * Implements singleton pattern for global access
+ */
 public class GamePanel extends JPanel implements Runnable {
-    // Screen settings  
-    final int originalTitleSize = 16; // 16x16 pixels
-    final int scale = 3; // 3x scale 
+    // Game state
+    private GameState currentState = GameState.MENU;
 
-    public final int tileSize = originalTitleSize * scale;
-    public final int maxScreenCol = 16;
-    public final int maxScreenRow = 12;
-    public final int screenWidth = tileSize * maxScreenCol; // 768 pixels
-    public final int screenHeight = tileSize * maxScreenRow; // 576 pixels
+    // Game loop
+    private Thread gameThread;
+    private volatile boolean running = false;
 
-    public int ScreenState = 0;
+    // Game components
+    private final KeyHandler keyHandler = new KeyHandler();
+    private final CollisionChecker collisionChecker = new CollisionChecker(this);
+    private final AssetSetter assetSetter = new AssetSetter(this);
+    private final EntityFactory playerFactory = new PlayerFactory(this, keyHandler);
+    private final Entity player = playerFactory.createEntity();
+    private final TileManager tileManager = new TileManager(this);
+    private final GameMenu gameMenu = new GameMenu(this, keyHandler);
 
-    // FPS
-    int FPS = 60;
-    // Instance of KeyHandler
-    KeyHandler keyH = new KeyHandler();
+    // Game objects - using ArrayList instead of fixed array
+    private final List<SuperObject> gameObjects = new ArrayList<>();
 
-    Thread gameThread;
-
-    // Instance of collision checker
-    public CollisionChecker collisionChecker = new CollisionChecker(this);
-
-
-    public AssetSetter assetSetter = new AssetSetter(this);
-    // create a new PlayerFactory instance
-    EntityFactory playerFactory = new PlayerFactory(this, keyH);
-
-    // create a new Player instance
-    Entity player = playerFactory.createEntity();
-    
-    public SuperObject obj[] = new SuperObject[10];
-
-    // Tile manager
-    TileManager tileManager = new TileManager(this);
-
-    GameMenu gameMenu = new GameMenu(this, keyH);
+    // Singleton instance
+    private static GamePanel instance;
 
     public GamePanel() {
-        this.setPreferredSize(new Dimension(screenWidth, screenHeight));
-        this.setBackground(Color.black);
+        setupPanel();
+    }
+
+    private void setupPanel() {
+        this.setPreferredSize(new Dimension(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT));
+        this.setBackground(GameConfig.BACKGROUND_COLOR);
         this.setDoubleBuffered(true);
-        this.addKeyListener(keyH);
+        this.addKeyListener(keyHandler);
         this.setFocusable(true);
         this.requestFocus();
     }
 
     public void setupGame() {
-        // Set up the game
-        if(ScreenState == 0){
+        if (currentState == GameState.MENU) {
             assetSetter.setObject();
         }
     }
 
-
-
-    private static GamePanel instance;
     // Singleton pattern
     public static GamePanel getInstance() {
-            if (instance == null) {
-                instance = new GamePanel();
-            }
-            return instance;
+        if (instance == null) {
+            instance = new GamePanel();
         }
+        return instance;
+    }
 
     public void startGameThread() {
-        gameThread = new Thread(this);
-        gameThread.start();
+        if (gameThread == null || !running) {
+            running = true;
+            gameThread = new Thread(this);
+            gameThread.start();
+        }
+    }
+
+    public void stopGameThread() {
+        running = false;
+        if (gameThread != null) {
+            try {
+                gameThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     @Override
     public void run() {
-        double drawInterval = 1000000000 / FPS;
-        double nexDrawTime = System.nanoTime() + drawInterval;
+        long lastTime = System.nanoTime();
+        long timer = 0;
+        int frames = 0;
 
-        while (gameThread != null) {
+        while (running) {
+            long currentTime = System.nanoTime();
+            long deltaTime = currentTime - lastTime;
+
+            // Update game logic
             update();
-            repaint();
-            try {
-                double remainingTime = nexDrawTime - System.nanoTime();
-                remainingTime = remainingTime / 1000000;
-                if (remainingTime < 0) remainingTime = 0;
 
-                Thread.sleep((long) remainingTime);
-                nexDrawTime += drawInterval;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            // Render
+            repaint();
+
+            // FPS calculation
+            timer += deltaTime;
+            frames++;
+
+            if (timer >= GameConfig.NANOS_PER_SECOND) {
+                // Optional: Log FPS for debugging
+                // System.out.println("FPS: " + frames);
+                frames = 0;
+                timer = 0;
             }
+
+            // Cap the frame rate
+            long sleepTime = GameConfig.DRAW_INTERVAL - deltaTime;
+            if (sleepTime > 0) {
+                try {
+                    Thread.sleep(sleepTime / 1_000_000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
+            lastTime = currentTime;
         }
     }
 
     public void update() {
-        player.update(); // update player
+        if (currentState == GameState.PLAYING) {
+            player.update();
+        }
     }
-    
+
     @Override
     public void paintComponent(Graphics g) {
-        super.paintComponent(g); // Ensure parent class method is called to clean the screen
+        super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        if (ScreenState == 0){
-            gameMenu.drawMenu(g2);
-        }
-        else if (ScreenState == 1){
 
-            tileManager.draw(g2); //draw tiles
-
-            for (int i = 0; i < obj.length; i++) {
-                if (obj[i] != null) {
-                    obj[i].draw(g2, this); // draw objects
-                }
+        switch (currentState) {
+            case MENU -> gameMenu.drawMenu(g2);
+            case PLAYING -> renderGame(g2);
+            case PAUSED -> {
+                renderGame(g2);
+                renderPauseOverlay(g2);
             }
-            player.draw(g2); // draw player
+            case GAME_OVER -> renderGameOver(g2);
+        }
+    }
+
+    private void renderGame(Graphics2D g2) {
+        // Draw tiles
+        tileManager.draw(g2);
+
+        // Draw objects
+        for (SuperObject obj : gameObjects) {
+            if (obj != null) {
+                obj.draw(g2, this);
+            }
+        }
+
+        // Draw player
+        player.draw(g2);
+    }
+
+    private void renderPauseOverlay(Graphics2D g2) {
+        // TODO: Implement pause overlay
+    }
+
+    private void renderGameOver(Graphics2D g2) {
+        // TODO: Implement game over screen
+    }
+
+    // Getters and setters
+    public GameState getCurrentState() {
+        return currentState;
+    }
+
+    public void setCurrentState(GameState state) {
+        this.currentState = state;
+    }
+
+    public Entity getPlayer() {
+        return player;
+    }
+
+    public TileManager getTileManager() {
+        return tileManager;
+    }
+
+    public CollisionChecker getCollisionChecker() {
+        return collisionChecker;
+    }
+
+    public List<SuperObject> getGameObjects() {
+        return gameObjects;
+    }
+
+    // Legacy compatibility - convert to use new ArrayList
+    public SuperObject[] getObjArray() {
+        return gameObjects.toArray(new SuperObject[0]);
+    }
+
+    public void setObjArray(SuperObject[] objArray) {
+        gameObjects.clear();
+        for (SuperObject obj : objArray) {
+            if (obj != null) {
+                gameObjects.add(obj);
+            }
         }
     }
 }

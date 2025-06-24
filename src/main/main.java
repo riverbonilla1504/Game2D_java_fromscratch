@@ -1,5 +1,10 @@
 package main;
+
 import javax.swing.JFrame;
+
+/**
+ * Main entry point for the game
+ */
 public class main {
     public static void main(String[] args) {
         // Create a new JFrame window
@@ -21,7 +26,7 @@ public class main {
         window.pack();
 
         // Set the title of the window
-        window.setTitle("Dungeon Escape");
+        window.setTitle(GameConfig.GAME_TITLE);
 
         // Center the window on the screen
         window.setLocationRelativeTo(null);

@@ -1,21 +1,28 @@
 package main;
 
 import object.Star;
+import main.GameConfig;
 
+/**
+ * Handles placement and initialization of game objects
+ */
 public class AssetSetter {
-    GamePanel gameP;
+    private final GamePanel gamePanel;
 
-    // AssetSetter constructor
-    public AssetSetter(GamePanel gameP){
-        this.gameP = gameP;
+    public AssetSetter(GamePanel gamePanel) {
+        this.gamePanel = gamePanel;
     }
-    
 
-    // setObject() method
-    public void setObject(){
-        gameP.obj[0] = new Star();
-        gameP.obj[0].worldX = 8 * gameP.tileSize;
-        gameP.obj[0].worldY = 8 * gameP.tileSize;
+    /**
+     * Initialize and place game objects in the world
+     */
+    public void setObject() {
+        // Create a star object
+        Star star = new Star();
+        star.worldX = 8 * GameConfig.TILE_SIZE;
+        star.worldY = 8 * GameConfig.TILE_SIZE;
 
+        // Add to game objects list
+        gamePanel.getGameObjects().add(star);
     }
 }

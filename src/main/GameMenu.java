@@ -5,42 +5,49 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
+/**
+ * Handles the main menu rendering and interaction
+ */
 public class GameMenu {
 
-    private GamePanel gamePanel;  // reference to the GamePanel used in the game
-    private KeyHandler keyH;      // reference to the KeyHandler used in the game
+    private final GamePanel gamePanel;
+    private final KeyHandler keyHandler;
 
-    // constructor
-    public GameMenu(GamePanel gamePanel, KeyHandler keyH) {
+    public GameMenu(GamePanel gamePanel, KeyHandler keyHandler) {
         this.gamePanel = gamePanel;
-        this.keyH = keyH;
+        this.keyHandler = keyHandler;
     }
 
     public void drawMenu(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g;  // initialize Graphics2D
+        Graphics2D g2 = (Graphics2D) g;
 
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 96F));
-        String text = "Dungeon Scape";
-        int textWidth = g2.getFontMetrics().stringWidth(text);
-        g2.setColor(Color.white);
-        g2.drawString(text, (gamePanel.screenWidth - textWidth) / 2, gamePanel.screenHeight / 4);
+        // Draw title
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD, GameConfig.TITLE_FONT_SIZE));
+        String title = GameConfig.MENU_TITLE;
+        int titleWidth = g2.getFontMetrics().stringWidth(title);
+        g2.setColor(GameConfig.TEXT_COLOR);
+        g2.drawString(title, (GameConfig.SCREEN_WIDTH - titleWidth) / 2, GameConfig.SCREEN_HEIGHT / 4);
 
-        gamePanel.player.draw(g2); // display the player
+        // Draw player preview
+        gamePanel.getPlayer().draw(g2);
 
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 48F));
-        text = "Press Enter to Start";
-        textWidth = g2.getFontMetrics().stringWidth(text);
-        g2.drawString(text, (gamePanel.screenWidth - textWidth) / 2, gamePanel.screenHeight / 2 + gamePanel.tileSize + gamePanel.tileSize);
+        // Draw start prompt
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD, GameConfig.MENU_FONT_SIZE));
+        String startPrompt = GameConfig.START_PROMPT;
+        int startWidth = g2.getFontMetrics().stringWidth(startPrompt);
+        g2.drawString(startPrompt, (GameConfig.SCREEN_WIDTH - startWidth) / 2,
+                GameConfig.SCREEN_HEIGHT / 2 + GameConfig.TILE_SIZE * 2);
 
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 48F));
-        text = "Press 'ESC' to Exit";
-        textWidth = g2.getFontMetrics().stringWidth(text);
-        g2.drawString(text, (gamePanel.screenWidth - textWidth) / 2, gamePanel.screenHeight / 2 + gamePanel.tileSize * 4);
+        // Draw exit prompt
+        String exitPrompt = GameConfig.EXIT_PROMPT;
+        int exitWidth = g2.getFontMetrics().stringWidth(exitPrompt);
+        g2.drawString(exitPrompt, (GameConfig.SCREEN_WIDTH - exitWidth) / 2,
+                GameConfig.SCREEN_HEIGHT / 2 + GameConfig.TILE_SIZE * 4);
 
-        // use the key handler to check if the Enter key is pressed
-        if (keyH.enterPressed) {
-            gamePanel.player.setDefaultValues();
-            gamePanel.ScreenState = 1; // change the screen state to 1
+        // Handle input
+        if (keyHandler.enterPressed) {
+            gamePanel.getPlayer().setDefaultValues();
+            gamePanel.setCurrentState(GameState.PLAYING);
         }
     }
 }
